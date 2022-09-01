@@ -1,39 +1,72 @@
-# hacs_iammeter
+# IamMeter
 
-#### 介绍
-{**以下是 Gitee 平台说明，您可以替换此简介**
-Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN）。专为开发者提供稳定、高效、安全的云端软件开发协作平台
-无论是个人、团队、或是企业，都能够用 Gitee 实现代码托管、项目管理、协作开发。企业项目请看 [https://gitee.com/enterprises](https://gitee.com/enterprises)}
+------
 
-#### 软件架构
-软件架构说明
+[IAMMETER](https://www.iammeter.com/) provides both a bi-directional single-phase energy meter([WEM3080](https://www.iammeter.com/products/single-phase-meter)) and a bi-directional three-phase energy monitor ([WEM3080T](https://www.iammeter.com/products/three-phase-meter)). Both of them can be integrated into Home Assistant.
 
+## Configuration
 
-#### 安装教程
+To use this sensor in your installation, add the following to your `configuration.yaml` file:
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+```yaml
+# Example configuration.yaml entry
+sensor:
+  - platform: iammeter
+    host: IP_ADDRESS_OF_HOST
+```
 
-#### 使用说明
+### CONFIGURATION VARIABLES
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+**host** string REQUIRED
 
-#### 参与贡献
+The IP address of your IAMMETER.
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+**port** integer (optional, default: 80)
 
+port of your IAMMETER.
 
-#### 特技
+**name** string (optional, default: IamMeter)
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+Name for the sensor entity.
+
+## Sensors
+
+Sensors available in the library:
+
+### SINGLE-PHASE ENERGY METER (WEM3080/WEM3162)
+
+| name                 | Unit | Description                  |
+| :------------------- | :--- | :--------------------------- |
+| wem3080_voltage      | V    | Voltage.                     |
+| wem3080_current      | A    | current.                     |
+| wem3080_power        | W    | active power.                |
+| wem3080_importenergy | kWh  | Energy consumption from grid |
+| wem3080_exportgrid   | kWh  | Energy export to grid        |
+
+### THREE-PHASE ENERGY METER (WEM3080T)
+
+| name                    | Unit | Description           |
+| :---------------------- | :--- | :-------------------- |
+| wem3080t_voltage_a      | V    | A phase voltage       |
+| wem3080t_current_a      | A    | A phase current       |
+| wem3080t_power_a        | W    | A phase active power  |
+| wem3080t_importenergy_a | kWh  | A phase import energy |
+| wem3080t_exportgrid_a   | kWh  | A phase export energy |
+| wem3080t_frequency_a    | Hz   | A phase frequency     |
+| wem3080t_pf_a           |      | A phase power factor  |
+|                         |      |                       |
+| wem3080t_voltage_b      | V    | B phase voltage       |
+| wem3080t_current_b      | A    | B phase current       |
+| wem3080t_power_b        | W    | B phase active power  |
+| wem3080t_importenergy_b | kWh  | B phase import energy |
+| wem3080t_exportgrid_b   | kWh  | B phase export energy |
+| wem3080t_frequency_b    | Hz   | B phase frequency     |
+| wem3080t_pf_b           |      | B phase power factor  |
+|                         |      |                       |
+| wem3080t_voltage_c      | V    | C phase voltage       |
+| wem3080t_current_c      | A    | C phase current       |
+| wem3080t_power_c        | W    | C phase active power  |
+| wem3080t_importenergy_c | kWh  | C phase import energy |
+| wem3080t_exportgrid_c   | kWh  | C phase export energy |
+| wem3080t_frequency_c    | Hz   | C phase frequency     |
+| wem3080t_pf_c           |      | C phase power factor  |
