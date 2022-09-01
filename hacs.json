@@ -1,0 +1,6 @@
+{
+  "name": "IamMeter Device",
+  "content_in_root": false,
+  "homeassistant": "2022.8.0",
+  "render_readme": false
+}
