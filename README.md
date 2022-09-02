@@ -6,7 +6,10 @@
 
 ## Configuration
 
-Install iammeter integration by searching "iammeter" in HACS first.
+Install HACS(https://hacs.xyz/) in HomeAssistant fisrt.
+
+Install iammeter integration by searching "iammeter" in HACS(https://hacs.xyz/).
+
 Install iammeter device using Config Flow UI.
 
 ### CONFIGURATION VARIABLES
