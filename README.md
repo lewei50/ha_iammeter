@@ -6,14 +6,8 @@
 
 ## Configuration
 
-To use this sensor in your installation, add the following to your `configuration.yaml` file:
-
-```yaml
-# Example configuration.yaml entry
-sensor:
-  - platform: iammeter
-    host: IP_ADDRESS_OF_HOST
-```
+Install iammeter integration by searching "iammeter" in HACS first.
+Install iammeter device using Config Flow UI.
 
 ### CONFIGURATION VARIABLES
 
