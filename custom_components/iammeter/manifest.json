@@ -1,5 +1,5 @@
 {
-  "domain": "iammeter_modbus",
+  "domain": "iammeter",
   "name": "Iammeter",
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/iammeter",
