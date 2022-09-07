@@ -3,7 +3,7 @@
   "name": "Iammeter",
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/iammeter",
-  "issue_tracker": "https://github.com/lewei50/core/issues",
+  "issue_tracker": "https://github.com/lewei50/ha_iammeter/issues",
   "codeowners": ["@lewei50"],
   "requirements": ["iammeter==0.2.1"],
   "iot_class": "local_polling",
