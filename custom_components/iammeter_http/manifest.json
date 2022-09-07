@@ -1,6 +1,6 @@
 {
   "domain": "iammeter_http",
-  "name": "Iammeter",
+  "name": "Iammeter_http",
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/iammeter",
   "issue_tracker": "https://github.com/lewei50/ha_iammeter/issues",
