@@ -53,7 +53,7 @@ class IammeterSensor(update_coordinator.CoordinatorEntity, SensorEntity):
         self._attr_unique_id = f"{coordinator.unique_id}_{description.key}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, coordinator.unique_id)},
-            manufacturer="IamMeter",
+            manufacturer="IAMMETER",
             name=coordinator.name,
         )
 
