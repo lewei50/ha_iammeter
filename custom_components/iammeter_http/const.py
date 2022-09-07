@@ -14,7 +14,7 @@ from homeassistant.const import (
     POWER_WATT,
 )
 
-DOMAIN = "iammeter"
+DOMAIN = "iammeter_http"
 
 # Default config for iammeter.
 DEFAULT_IP = "192.168.2.15"
