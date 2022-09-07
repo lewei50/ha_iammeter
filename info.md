@@ -4,27 +4,31 @@
 
 [IAMMETER](https://www.iammeter.com/) provides both a bi-directional single-phase energy meter([WEM3080](https://www.iammeter.com/products/single-phase-meter)) and a bi-directional three-phase energy monitor ([WEM3080T](https://www.iammeter.com/products/three-phase-meter)). Both of them can be integrated into Home Assistant.
 
+## Installation
+
+------
+
+### Manual Installation
+
+1. Copy `ha_iammeter` folder into your custom_components folder in your hass configuration directory.
+2. Restart Home Assistant.
+
+### Installation with HACS (Home Assistant Community Store)
+
+1. Ensure that HACS is installed.
+2. In HACS / Integrations /explore&download repositories/iammeter, add the url the this repository.
+3. Search for and install the `iammeter` integration.
+4. Restart Home Assistant.
+
 ## Configuration
 
-Install HACS(https://hacs.xyz/) in HomeAssistant fisrt.
+It is configurable through config flow, meaning it will popup a dialog after adding the integration.
 
-Install iammeter integration by searching "iammeter" in HACS(https://hacs.xyz/).
-
-Install iammeter device using Config Flow UI.
-
-### CONFIGURATION VARIABLES
-
-**host** string REQUIRED
-
-The IP address of your IAMMETER.
-
-**port** integer (optional, default: 80)
-
-port of your IAMMETER.
-
-**name** string (optional, default: IamMeter)
-
-Name for the sensor entity.
+1. Head to Settings --> Devices & Services--> ADD INTEGRATION
+2. Add new and search for `iammeter`
+3. Enter a name for your meter. It suggests "IamMeter" by default, but if you plan to read multiple make it a unique name.
+4. Enter a IP to the IamMeter module. For example: "192.168.2.15" .
+5. SUBMIT --> FINISH.
 
 ## Sensors
 
