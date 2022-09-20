@@ -74,7 +74,7 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             user_input = {}
             user_input[CONF_NAME] = DEFAULT_NAME
             user_input[CONF_IP_ADDRESS] = DEFAULT_IP
-            if self.discovered_conf:
+            if hasattr(self, 'discovered_conf'):
                 user_input[CONF_NAME] = self.discovered_conf[CONF_NAME]
                 user_input[CONF_IP_ADDRESS] = self.discovered_conf[CONF_IP_ADDRESS]
 
