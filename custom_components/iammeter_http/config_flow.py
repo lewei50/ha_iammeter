@@ -1,11 +1,13 @@
 """Config flow for iammeter integration."""
 import logging
+from urllib.parse import urlparse
 
 from iammeter.client import IamMeter
 from requests.exceptions import HTTPError, Timeout
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.components import ssdp
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.util import slugify
@@ -72,6 +74,9 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             user_input = {}
             user_input[CONF_NAME] = DEFAULT_NAME
             user_input[CONF_IP_ADDRESS] = DEFAULT_IP
+            if self.discovered_conf:
+                user_input[CONF_NAME] = self.discovered_conf[CONF_NAME]
+                user_input[CONF_IP_ADDRESS] = self.discovered_conf[CONF_IP_ADDRESS]
 
         return self.async_show_form(
             step_id="user",
@@ -88,6 +93,28 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             errors=self._errors,
         )
+
+    async def async_step_ssdp(self, discovery_info):
+        """Handle a discovered Heos device."""
+        friendly_name = discovery_info.upnp[ssdp.ATTR_UPNP_FRIENDLY_NAME]
+        host = urlparse(discovery_info.ssdp_location).hostname
+        dev_sn = friendly_name[-8:]
+        self.host = host
+        self.discovered_conf = {
+            CONF_NAME: friendly_name,
+            CONF_IP_ADDRESS: host,
+        }
+        # pylint: disable=no-member # https://github.com/PyCQA/pylint/issues/3167
+        self.context["title_placeholders"] = self.discovered_conf
+        if self._host_in_configuration_exists(friendly_name):
+            return self.async_abort(reason="already_configured")
+
+        # unique_id should be serial for services purpose
+        await self.async_set_unique_id(dev_sn, raise_on_progress=False)
+
+        # Check if already configured
+        self._abort_if_unique_id_configured()
+        return await self.async_step_user()
 
     async def async_step_import(self, user_input=None):
         """Import a config entry."""
