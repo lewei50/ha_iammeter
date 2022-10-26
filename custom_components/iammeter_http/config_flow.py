@@ -8,11 +8,11 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.components import ssdp
-from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
+from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME, CONF_PORT
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.util import slugify
 
-from .const import DEFAULT_IP, DEFAULT_NAME, DOMAIN
+from .const import DEFAULT_IP, DEFAULT_NAME, DEFAULT_PORT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,10 +41,10 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return True
         return False
 
-    async def _test_connection(self, host):
+    async def _test_connection(self, host, port):
         """Check if we can connect to the Iammeter device."""
         try:
-            await self.hass.async_add_executor_job(IamMeter, host)
+            await self.hass.async_add_executor_job(IamMeter, host, port)
             return True
         except (OSError, HTTPError, Timeout):
             self._errors[CONF_IP_ADDRESS] = "cannot_connect"
@@ -61,22 +61,25 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # set some defaults in case we need to return to the form
             name = slugify(user_input.get(CONF_NAME, DEFAULT_NAME))
             host = user_input.get(CONF_IP_ADDRESS, DEFAULT_IP)
+            port = user_input.get(CONF_PORT, DEFAULT_PORT)
 
             if self._host_in_configuration_exists(host):
                 self._errors[CONF_IP_ADDRESS] = "already_configured"
             else:
-                if await self._test_connection(host):
+                if await self._test_connection(host, port):
                     return self.async_create_entry(
                         title=name,
-                        data={CONF_IP_ADDRESS: host},
+                        data={CONF_IP_ADDRESS: host, CONF_PORT: port},
                     )
         else:
             user_input = {}
             user_input[CONF_NAME] = DEFAULT_NAME
             user_input[CONF_IP_ADDRESS] = DEFAULT_IP
+            user_input[CONF_PORT] = DEFAULT_PORT
             if hasattr(self, 'discovered_conf'):
                 user_input[CONF_NAME] = self.discovered_conf[CONF_NAME]
                 user_input[CONF_IP_ADDRESS] = self.discovered_conf[CONF_IP_ADDRESS]
+                user_input[CONF_PORT] = DEFAULT_PORT
 
         return self.async_show_form(
             step_id="user",
@@ -89,6 +92,10 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_IP_ADDRESS,
                         default=user_input.get(CONF_IP_ADDRESS, DEFAULT_IP),
                     ): str,
+                    vol.Required(
+                        CONF_PORT,
+                        default=user_input.get(CONF_PORT, DEFAULT_PORT),
+                    ): int,
                 }
             ),
             errors=self._errors,
@@ -98,11 +105,13 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle a discovered Heos device."""
         friendly_name = discovery_info.upnp[ssdp.ATTR_UPNP_FRIENDLY_NAME]
         host = urlparse(discovery_info.ssdp_location).hostname
+        port = DEFAULT_PORT
         dev_sn = friendly_name[-8:]
         self.host = host
         self.discovered_conf = {
             CONF_NAME: friendly_name,
             CONF_IP_ADDRESS: host,
+            CONF_PORT: port,
         }
         # pylint: disable=no-member # https://github.com/PyCQA/pylint/issues/3167
         self.context["title_placeholders"] = self.discovered_conf
