@@ -2,7 +2,7 @@
 from datetime import timedelta
 import logging
 
-from iammeter.client import IamMeter
+from iammeter_hacs.client import IamMeter
 from requests.exceptions import HTTPError, Timeout
 
 from homeassistant.config_entries import ConfigEntry

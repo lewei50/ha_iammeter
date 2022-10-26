@@ -2,7 +2,7 @@
 import logging
 from urllib.parse import urlparse
 
-from iammeter.client import IamMeter
+from iammeter_hacs.client import IamMeter
 from requests.exceptions import HTTPError, Timeout
 import voluptuous as vol
 
