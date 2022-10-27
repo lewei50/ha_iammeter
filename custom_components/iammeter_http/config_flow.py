@@ -21,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 def iammeter_entries(hass: HomeAssistant):
     """Return the hosts already configured."""
     return {
-        entry.data[CONF_IP_ADDRESS]
+        entry.data[CONF_NAME]
         for entry in hass.config_entries.async_entries(DOMAIN)
     }
 
@@ -35,9 +35,9 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         self._errors: dict = {}
 
-    def _host_in_configuration_exists(self, host) -> bool:
+    def _host_in_configuration_exists(self, name) -> bool:
         """Return True if host exists in configuration."""
-        if host in iammeter_entries(self.hass):
+        if name in iammeter_entries(self.hass):
             return True
         return False
 
@@ -63,13 +63,13 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             host = user_input.get(CONF_IP_ADDRESS, DEFAULT_IP)
             port = user_input.get(CONF_PORT, DEFAULT_PORT)
 
-            if self._host_in_configuration_exists(host):
-                self._errors[CONF_IP_ADDRESS] = "already_configured"
+            if self._host_in_configuration_exists(name):
+                self._errors[CONF_NAME] = "already_configured"
             else:
                 if await self._test_connection(host, port):
                     return self.async_create_entry(
                         title=name,
-                        data={CONF_IP_ADDRESS: host, CONF_PORT: port},
+                        data={CONF_NAME:name, CONF_IP_ADDRESS: host, CONF_PORT: port},
                     )
         else:
             user_input = {}
@@ -127,8 +127,8 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_import(self, user_input=None):
         """Import a config entry."""
-        host = user_input.get(CONF_IP_ADDRESS, DEFAULT_IP)
+        name = user_input.get(CONF_NAME, DEFAULT_NAME)
 
-        if self._host_in_configuration_exists(host):
+        if self._host_in_configuration_exists(name):
             return self.async_abort(reason="already_configured")
         return await self.async_step_user(user_input)
