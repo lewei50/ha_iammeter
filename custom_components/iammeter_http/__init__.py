@@ -49,11 +49,12 @@ class IammeterData(update_coordinator.DataUpdateCoordinator):
         self.unique_id = entry.entry_id
         self.name = entry.title
         self.host = host_entry
+        self.port = entry.data[CONF_PORT]
 
     async def _async_update_data(self):
         """Update the data from the Iammeter device."""
         try:
-            data = await self.hass.async_add_executor_job(IamMeter, self.host)
+            data = await self.hass.async_add_executor_job(IamMeter, self.host, self.port)
         except (OSError, Timeout, HTTPError) as err:
             raise update_coordinator.UpdateFailed(err)
 
