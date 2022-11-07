@@ -6,7 +6,7 @@ from iammeter_hacs.client import IamMeter
 from requests.exceptions import HTTPError, Timeout
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_IP_ADDRESS, Platform
+from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import update_coordinator
 
