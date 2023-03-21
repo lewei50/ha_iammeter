@@ -13,6 +13,7 @@ from .const import (
     DOMAIN,
     SENSOR_TYPES_3080,
     SENSOR_TYPES_3080T,
+    SENSOR_TYPES_3080T_E,
     IammeterSensorEntityDescription,
 )
 
@@ -23,17 +24,23 @@ async def async_setup_entry(
     """Add Iammeter entry."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     print("ok")
-    print(coordinator.data.model)
+    #print(coordinator.data.model)
     if coordinator.data.model == DEVICE_3080:
         async_add_entities(
             IammeterSensor(coordinator, description)
             for description in SENSOR_TYPES_3080
         )
     if coordinator.data.model == DEVICE_3080T:
-        async_add_entities(
+        if "Voltage_Net" in coordinator.data.measurement:
+            async_add_entities(
             IammeterSensor(coordinator, description)
-            for description in SENSOR_TYPES_3080T
+            for description in SENSOR_TYPES_3080T_E
         )
+        else:
+            async_add_entities(
+                IammeterSensor(coordinator, description)
+                for description in SENSOR_TYPES_3080T
+            )
 
 
 class IammeterSensor(update_coordinator.CoordinatorEntity, SensorEntity):

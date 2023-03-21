@@ -71,3 +71,10 @@ Sensors available in the library:
 | wem3080t_exportgrid_c   | kWh  | C phase export energy |
 | wem3080t_frequency_c    | Hz   | C phase frequency     |
 | wem3080t_pf_c           |      | C phase power factor  |
+|                         |      |                       |
+| wem3080t_voltage_net      | V    | Net Metering Metod voltage |
+| wem3080t_power_net        | W    | Net Metering Metod active power |
+| wem3080t_importenergy_net | kWh  | Net Metering Metod import energy |
+| wem3080t_exportgrid_net   | kWh  | Net Metering Metod export energy |
+| wem3080t_frequency_net    | Hz   | Net Metering Metod frequency |
+| wem3080t_pf_net           |      | Net Metering Metod power factor |
