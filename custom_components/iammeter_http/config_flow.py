@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 from iammeter_hacs.client import IamMeter
 from requests.exceptions import HTTPError, Timeout
 import voluptuous as vol
+import re
 
 from homeassistant import config_entries
 from homeassistant.components import ssdp
@@ -30,6 +31,7 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for iammeter."""
 
     VERSION = 1
+    _serial_number = ""
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -106,7 +108,12 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         friendly_name = discovery_info.upnp[ssdp.ATTR_UPNP_FRIENDLY_NAME]
         host = urlparse(discovery_info.ssdp_location).hostname
         port = DEFAULT_PORT
-        dev_sn = friendly_name[-8:]
+        #dev_sn = friendly_name[-8:]
+        x = re.search("_(\\w*)$",friendly_name)
+        if(x):
+            self._serial_number = x.group(1)
+        else:
+            self._serial_number = friendly_name
         self.host = host
         self.discovered_conf = {
             CONF_NAME: friendly_name,
@@ -119,10 +126,14 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="already_configured")
 
         # unique_id should be serial for services purpose
-        await self.async_set_unique_id(dev_sn, raise_on_progress=False)
+        await self.async_set_unique_id(self._serial_number, raise_on_progress=False)
 
         # Check if already configured
         self._abort_if_unique_id_configured()
+        
+        if self._async_in_progress():
+            return self.async_abort(reason="single_instance_allowed")
+        
         return await self.async_step_user()
 
     async def async_step_import(self, user_input=None):
