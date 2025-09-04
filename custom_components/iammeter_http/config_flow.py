@@ -8,7 +8,7 @@ import voluptuous as vol
 import re
 
 from homeassistant import config_entries
-from homeassistant.components import ssdp
+from homeassistant.helpers.service_info.ssdp import ATTR_UPNP_FRIENDLY_NAME
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME, CONF_PORT
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.util import slugify
@@ -105,7 +105,7 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_ssdp(self, discovery_info):
         """Handle a discovered Heos device."""
-        friendly_name = discovery_info.upnp[ssdp.ATTR_UPNP_FRIENDLY_NAME]
+        friendly_name = discovery_info.upnp.get(ATTR_UPNP_FRIENDLY_NAME)
         host = urlparse(discovery_info.ssdp_location).hostname
         port = DEFAULT_PORT
         #dev_sn = friendly_name[-8:]
