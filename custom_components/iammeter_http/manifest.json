@@ -13,5 +13,5 @@
     "manufacturer": "IAMMETER",
     "deviceType": "urn:schemas-micasaverde-com:service:EnergyMetering:1"
   }],
-  "version": "v1.0.17"
+  "version": "v1.0.18"
 }
