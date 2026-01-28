@@ -22,8 +22,9 @@ _LOGGER = logging.getLogger(__name__)
 def iammeter_entries(hass: HomeAssistant):
     """Return the hosts already configured."""
     return {
-        entry.data[CONF_NAME]
+        entry.data.get(CONF_NAME)
         for entry in hass.config_entries.async_entries(DOMAIN)
+        if entry.data.get(CONF_NAME) is not None
     }
 
 
