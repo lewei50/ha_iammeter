@@ -1,9 +1,10 @@
 """Config flow for iammeter integration."""
+import asyncio
 import logging
 from urllib.parse import urlparse
 
 from iammeter_hacs.client import IamMeter
-from requests.exceptions import HTTPError, Timeout
+from requests.exceptions import HTTPError, Timeout, ConnectionError, RequestException
 import voluptuous as vol
 import re
 
@@ -13,7 +14,7 @@ from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME, CONF_PORT
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.util import slugify
 
-from .const import DEFAULT_IP, DEFAULT_NAME, DEFAULT_PORT, DOMAIN
+from .const import DEFAULT_IP, DEFAULT_NAME, DEFAULT_PORT, DEFAULT_TIMEOUT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,13 +48,25 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def _test_connection(self, host, port):
         """Check if we can connect to the Iammeter device."""
         try:
-            await self.hass.async_add_executor_job(IamMeter, host, port)
+            await asyncio.wait_for(
+                self.hass.async_add_executor_job(IamMeter, host, port),
+                timeout=DEFAULT_TIMEOUT
+            )
             return True
-        except (OSError, HTTPError, Timeout):
+        except asyncio.TimeoutError:
             self._errors[CONF_IP_ADDRESS] = "cannot_connect"
             _LOGGER.error(
-                "Could not connect to Iammeter device at %s, check host ip address",
+                "Connection timeout to IAMMETER device (%s:%s), please check if device is online and network connection",
                 host,
+                port,
+            )
+        except (OSError, HTTPError, Timeout, ConnectionError, RequestException) as err:
+            self._errors[CONF_IP_ADDRESS] = "cannot_connect"
+            _LOGGER.error(
+                "Cannot connect to IAMMETER device %s:%s, error: %s",
+                host,
+                port,
+                str(err),
             )
         return False
 
