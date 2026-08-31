@@ -1,80 +1,89 @@
-# IAMMETER
+# IAMMETER HTTP for Home Assistant
 
-------
+Local-polling Home Assistant custom integration for IAMMETER energy meters.
 
-[IAMMETER](https://www.iammeter.com/) provides both a bi-directional single-phase energy meter([WEM3080](https://www.iammeter.com/products/single-phase-meter)) and a bi-directional three-phase energy monitor ([WEM3080T](https://www.iammeter.com/products/three-phase-meter)). Both of them can be integrated into Home Assistant.
+## Supported meters
+
+- WEM3080 and legacy WEM3162 single-phase payloads
+- WEM3080T
+- WEM3046T
+- WEM3050T
+- WEM3063T
+- WEM2067 two-channel meter
+
+WEM2067 exposes channels A and B only; no C-channel entities are created.
+
+Optional `EA.Reactive` and Net Metering data are supported. If Reactive or Net
+Metering data is not available in the device response, the corresponding
+optional sensors are not created. If the data appears later, the sensors are
+added automatically on the next update. Sensors already discovered remain
+registered and become unavailable if their data later disappears.
 
 ## Installation
 
-------
-
-### Manual Installation
-
-1. Copy `ha_iammeter` folder into your custom_components folder in your hass configuration directory.
-2. Restart Home Assistant.
-
-### Installation with HACS (Home Assistant Community Store)
-
-1. Ensure that HACS is installed.
-2. In HACS / Integrations /explore&download repositories/iammeter, add the url the this repository.
-3. Search for and install the `iammeter` integration.
-4. Restart Home Assistant.
+Install this repository as a custom integration with HACS, or copy
+`custom_components/iammeter_http` into your Home Assistant configuration's
+`custom_components` directory, then restart Home Assistant.
 
 ## Configuration
 
-It is configurable through config flow, meaning it will popup a dialog after adding the integration.
+1. Go to **Settings > Devices & services > Add integration**.
+2. Search for **IAMMETER HTTP**.
+3. Enter a unique device name, hostname or IP address, HTTP port, and polling
+   interval.
+4. Submit the form after the connection test succeeds.
 
-1. Head to Settings --> Devices & Services--> ADD INTEGRATION
-2. Add new and search for `iammeter`
-3. Enter a name for your meter. It suggests "IamMeter" by default, but if you plan to read multiple make it a unique name.
-4. Enter a IP to the IamMeter module. For example: "192.168.2.15" .
-5. SUBMIT --> FINISH.
+The default polling interval is 60 seconds. The allowed range is 1-3600
+seconds.
+
+For an existing entry, select **Reconfigure** to change its hostname/IP, HTTP
+port, or polling interval. Home Assistant validates the new endpoint and
+reloads the existing entry. The device name and entity unique IDs are retained.
+
+The device page displays the detected meter model, firmware version, serial
+number, and a link to the meter's local web interface.
 
 ## Sensors
 
-Sensors available in the library:
+### Single-phase meters (WEM3080/WEM3162)
 
-### SINGLE-PHASE ENERGY METER (WEM3080/WEM3162)
+| Sensor | Unit |
+| :--- | :--- |
+| Voltage | V |
+| Current | A |
+| Power | W |
+| Import energy | kWh |
+| Export energy | kWh |
 
-| name                 | Unit | Description                  |
-| :------------------- | :--- | :--------------------------- |
-| wem3080_voltage      | V    | Voltage.                     |
-| wem3080_current      | A    | current.                     |
-| wem3080_power        | W    | active power.                |
-| wem3080_importenergy | kWh  | Energy consumption from grid |
-| wem3080_exportgrid   | kWh  | Energy export to grid        |
+When reactive data is present, Reactive power, Inductive reactive energy, and
+Capacitive reactive energy sensors are added automatically.
 
-### THREE-PHASE ENERGY METER (WEM3080T)
+### Multi-channel meters
 
-| name                    | Unit | Description           |
-| :---------------------- | :--- | :-------------------- |
-| wem3080t_voltage_a      | V    | A phase voltage       |
-| wem3080t_current_a      | A    | A phase current       |
-| wem3080t_power_a        | W    | A phase active power  |
-| wem3080t_importenergy_a | kWh  | A phase import energy |
-| wem3080t_exportgrid_a   | kWh  | A phase export energy |
-| wem3080t_frequency_a    | Hz   | A phase frequency     |
-| wem3080t_pf_a           |      | A phase power factor  |
-|                         |      |                       |
-| wem3080t_voltage_b      | V    | B phase voltage       |
-| wem3080t_current_b      | A    | B phase current       |
-| wem3080t_power_b        | W    | B phase active power  |
-| wem3080t_importenergy_b | kWh  | B phase import energy |
-| wem3080t_exportgrid_b   | kWh  | B phase export energy |
-| wem3080t_frequency_b    | Hz   | B phase frequency     |
-| wem3080t_pf_b           |      | B phase power factor  |
-|                         |      |                       |
-| wem3080t_voltage_c      | V    | C phase voltage       |
-| wem3080t_current_c      | A    | C phase current       |
-| wem3080t_power_c        | W    | C phase active power  |
-| wem3080t_importenergy_c | kWh  | C phase import energy |
-| wem3080t_exportgrid_c   | kWh  | C phase export energy |
-| wem3080t_frequency_c    | Hz   | C phase frequency     |
-| wem3080t_pf_c           |      | C phase power factor  |
-|                         |      |                       |
-| wem3080t_voltage_net      | V    | Net Metering Metod voltage |
-| wem3080t_power_net        | W    | Net Metering Metod active power |
-| wem3080t_importenergy_net | kWh  | Net Metering Metod import energy |
-| wem3080t_exportgrid_net   | kWh  | Net Metering Metod export energy |
-| wem3080t_frequency_net    | Hz   | Net Metering Metod frequency |
-| wem3080t_pf_net           |      | Net Metering Metod power factor |
+WEM3080T, WEM3046T, WEM3050T, and WEM3063T expose the following sensors for
+each A, B, and C phase. WEM2067 exposes the same sensors for A and B only.
+
+| Sensor per phase | Unit |
+| :--- | :--- |
+| Voltage | V |
+| Current | A |
+| Power | W |
+| Import energy | kWh |
+| Export energy | kWh |
+| Frequency | Hz |
+| Power factor | — |
+
+When reactive data is present, each physical phase also exposes Reactive
+power, Inductive reactive energy, and Capacitive reactive energy. When Net
+Metering data is present, Net voltage, Net power, Net import energy, Net export
+energy, Net frequency, and Net power factor sensors are added automatically.
+
+## Data layout
+
+Each phase row uses:
+
+`[voltage, current, active power, import energy, export energy, frequency, power factor]`
+
+Each optional `EA.Reactive` row uses:
+
+`[reactive power, inductive reactive energy, capacitive reactive energy]`

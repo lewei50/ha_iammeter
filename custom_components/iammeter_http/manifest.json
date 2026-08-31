@@ -1,17 +1,16 @@
 {
   "domain": "iammeter_http",
-  "name": "Iammeter_http",
-  "config_flow": true,
-  "documentation": "https://www.home-assistant.io/integrations/iammeter",
-  "issue_tracker": "https://github.com/lewei50/ha_iammeter/issues",
+  "name": "IAMMETER HTTP",
   "codeowners": ["@lewei50"],
-  "requirements": ["iammeter-hacs==0.1"],
+  "config_flow": true,
+  "documentation": "https://github.com/lewei50/ha_iammeter",
   "iot_class": "local_polling",
-  "loggers": ["iammeter"],
+  "issue_tracker": "https://github.com/lewei50/ha_iammeter/issues",
+  "requirements": [],
   "ssdp": [{
     "st": "upnp:rootdevice",
     "manufacturer": "IAMMETER",
     "deviceType": "urn:schemas-micasaverde-com:service:EnergyMetering:1"
   }],
-  "version": "v1.0.20"
+  "version": "1.1.0"
 }

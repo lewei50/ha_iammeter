@@ -1,152 +1,78 @@
-"""Iammeter integration."""
-import asyncio
-from datetime import timedelta
-import logging
+"""IAMMETER HTTP integration."""
 
-from iammeter_hacs.client import IamMeter
-from requests.exceptions import HTTPError, Timeout, ConnectionError, RequestException
+from __future__ import annotations
+
+import logging
+from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT, Platform
+from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT, CONF_SCAN_INTERVAL, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import update_coordinator
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DOMAIN, DEFAULT_TIMEOUT, DEFAULT_UPDATE_INTERVAL
+from .api import IammeterApi, IammeterApiError
+from .const import (
+    DEFAULT_TIMEOUT,
+    DEFAULT_UPDATE_INTERVAL,
+    DOMAIN,
+)
+from .models import IammeterReading
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [Platform.SENSOR]
 
+type IammeterConfigEntry = ConfigEntry["IammeterData"]
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up a config entry for iammeter."""
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: IammeterConfigEntry,
+) -> bool:
+    """Set up IAMMETER HTTP from a config entry."""
     coordinator = IammeterData(hass, entry)
     await coordinator.async_config_entry_first_refresh()
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry."""
+async def async_unload_entry(
+    hass: HomeAssistant,
+    entry: IammeterConfigEntry,
+) -> bool:
+    """Unload an IAMMETER HTTP config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
-class IammeterData(update_coordinator.DataUpdateCoordinator):
-    """Get and update the latest data."""
+class IammeterData(DataUpdateCoordinator[IammeterReading]):
+    """Coordinate IAMMETER local HTTP updates."""
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
-        """Initialize the data object."""
+    def __init__(self, hass: HomeAssistant, entry: IammeterConfigEntry) -> None:
+        """Initialize the coordinator."""
+        update_interval = entry.data.get(
+            CONF_SCAN_INTERVAL,
+            DEFAULT_UPDATE_INTERVAL,
+        )
         super().__init__(
-            hass, 
-            _LOGGER, 
-            name="Iammeter", 
-            update_interval=timedelta(seconds=DEFAULT_UPDATE_INTERVAL)
+            hass,
+            _LOGGER,
+            config_entry=entry,
+            name=DOMAIN,
+            update_interval=timedelta(seconds=update_interval),
+        )
+        self.name = entry.title
+        self.api = IammeterApi(
+            async_get_clientsession(hass),
+            entry.data[CONF_IP_ADDRESS],
+            entry.data[CONF_PORT],
+            DEFAULT_TIMEOUT,
         )
 
-        host_entry = entry.data[CONF_IP_ADDRESS]
-
-        # url = urlparse(host_entry, "http")
-        # netloc = url.netloc or url.path
-        # path = url.path if url.netloc else ""
-        # url = ParseResult("http", netloc, path, *url[3:])
-        self.unique_id = entry.entry_id
-        self.name = entry.title
-        self.host = host_entry
-        self.port = entry.data[CONF_PORT]
-        self.timeout = DEFAULT_TIMEOUT
-        self._consecutive_errors = 0
-
-    async def _async_update_data(self):
-        """Update the data from the Iammeter device."""
+    async def _async_update_data(self) -> IammeterReading:
+        """Fetch the latest IAMMETER data."""
         try:
-            # 使用 asyncio.wait_for 添加超时限制
-            data = await asyncio.wait_for(
-                self.hass.async_add_executor_job(IamMeter, self.host, self.port),
-                timeout=self.timeout
-            )
-            
-            # Connection successful, reset error counter
-            if self._consecutive_errors > 0:
-                self.logger.info(
-                    "Successfully reconnected to IAMMETER device %s:%s (Serial: %s)",
-                    self.host,
-                    self.port,
-                    data.serial_number
-                )
-                self._consecutive_errors = 0
-            
-            self.logger.debug(
-                "Successfully retrieved data from IAMMETER device (Serial: %s)",
-                data.serial_number,
-            )
-            
-            return data
-            
-        except asyncio.TimeoutError:
-            self._consecutive_errors += 1
-            # Only log errors on first failure and every 10th failure to avoid log spam
-            if self._consecutive_errors == 1 or self._consecutive_errors % 10 == 0:
-                self.logger.error(
-                    "Connection timeout to IAMMETER device (%s:%s) - %d consecutive failures. "
-                    "Please check if the device is online and network connection is normal.",
-                    self.host,
-                    self.port,
-                    self._consecutive_errors
-                )
-            else:
-                self.logger.debug(
-                    "Connection timeout (%s:%s) - %d consecutive failures",
-                    self.host,
-                    self.port,
-                    self._consecutive_errors
-                )
-            raise update_coordinator.UpdateFailed(
-                f"Connection timeout: Device {self.host}:{self.port} did not respond within {self.timeout} seconds"
-            )
-            
-        except (ConnectionError, OSError) as err:
-            self._consecutive_errors += 1
-            # Only log errors on first failure and every 10th failure
-            if self._consecutive_errors == 1 or self._consecutive_errors % 10 == 0:
-                self.logger.error(
-                    "Cannot connect to IAMMETER device (%s:%s) - %d consecutive failures. "
-                    "Error: %s. Please check device IP address and network connection.",
-                    self.host,
-                    self.port,
-                    self._consecutive_errors,
-                    str(err)
-                )
-            else:
-                self.logger.debug(
-                    "Connection failed (%s:%s) - %d consecutive failures: %s",
-                    self.host,
-                    self.port,
-                    self._consecutive_errors,
-                    str(err)
-                )
-            raise update_coordinator.UpdateFailed(
-                f"Connection failed: Unable to connect to device {self.host}:{self.port}"
-            )
-            
-        except (Timeout, HTTPError, RequestException) as err:
-            self._consecutive_errors += 1
-            # Only log errors on first failure and every 10th failure
-            if self._consecutive_errors == 1 or self._consecutive_errors % 10 == 0:
-                self.logger.error(
-                    "Failed to retrieve data from IAMMETER device (%s:%s) - %d consecutive failures. "
-                    "Error: %s",
-                    self.host,
-                    self.port,
-                    self._consecutive_errors,
-                    str(err)
-                )
-            else:
-                self.logger.debug(
-                    "Data retrieval failed (%s:%s) - %d consecutive failures: %s",
-                    self.host,
-                    self.port,
-                    self._consecutive_errors,
-                    str(err)
-                )
-            raise update_coordinator.UpdateFailed(str(err))
+            return await self.api.async_get_data()
+        except IammeterApiError as err:
+            raise UpdateFailed(str(err)) from err

@@ -1,75 +1,89 @@
-"""Platform for iammeter sensors."""
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers import update_coordinator
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+"""Sensor platform for IAMMETER HTTP."""
 
-from . import IammeterData
+from __future__ import annotations
+
+from homeassistant.components.sensor import SensorEntity
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from . import IammeterConfigEntry, IammeterData
 from .const import (
-    DEVICE_3080,
-    DEVICE_3080T,
     DOMAIN,
-    SENSOR_TYPES_3080,
-    SENSOR_TYPES_3080T,
-    SENSOR_TYPES_3080T_E,
+    SENSOR_TYPES_BY_MODEL,
     IammeterSensorEntityDescription,
 )
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: IammeterConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add Iammeter entry."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-    print("ok")
-    #print(coordinator.data.model)
-    if coordinator.data.model == DEVICE_3080:
+    """Set up IAMMETER HTTP sensors."""
+    coordinator = entry.runtime_data
+    descriptions = SENSOR_TYPES_BY_MODEL[coordinator.data.model]
+    added_keys: set[str] = set()
+
+    def _async_add_new_entities() -> None:
+        """Add measurements when they first appear in a meter response."""
+        new_descriptions = [
+            description
+            for description in descriptions
+            if description.key in coordinator.data.measurement
+            and description.key not in added_keys
+        ]
+        if not new_descriptions:
+            return
+
+        added_keys.update(description.key for description in new_descriptions)
         async_add_entities(
-            IammeterSensor(coordinator, description)
-            for description in SENSOR_TYPES_3080
+            IammeterSensor(coordinator, entry, description)
+            for description in new_descriptions
         )
-    if coordinator.data.model == DEVICE_3080T:
-        if "Voltage_Net" in coordinator.data.measurement:
-            async_add_entities(
-            IammeterSensor(coordinator, description)
-            for description in SENSOR_TYPES_3080T_E
-        )
-        else:
-            async_add_entities(
-                IammeterSensor(coordinator, description)
-                for description in SENSOR_TYPES_3080T
-            )
+
+    _async_add_new_entities()
+    entry.async_on_unload(coordinator.async_add_listener(_async_add_new_entities))
 
 
-class IammeterSensor(update_coordinator.CoordinatorEntity, SensorEntity):
-    """Representation of a Sensor."""
+class IammeterSensor(CoordinatorEntity[IammeterData], SensorEntity):
+    """Representation of an IAMMETER HTTP sensor."""
 
+    _attr_has_entity_name = True
     entity_description: IammeterSensorEntityDescription
 
     def __init__(
         self,
         coordinator: IammeterData,
+        entry: IammeterConfigEntry,
         description: IammeterSensorEntityDescription,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._attr_name = f"{coordinator.name} {description.name}"
-        self._attr_unique_id = f"{coordinator.unique_id}_{description.key}"
+        self._attr_unique_id = f"{entry.entry_id}_{description.key}"
+
+        reading = coordinator.data
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.unique_id)},
+            identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="IAMMETER",
-            name=coordinator.name,
+            name=entry.title,
+            model=reading.model,
+            sw_version=reading.firmware_version,
+            serial_number=reading.serial_number,
+            configuration_url=coordinator.api.configuration_url,
         )
 
     @property
-    def native_value(self):
-        """Return the native sensor value."""
-        raw_attr = self.coordinator.data.measurement.get(
-            self.entity_description.key, None
+    def available(self) -> bool:
+        """Return whether this measurement is present in the latest payload."""
+        return (
+            super().available
+            and self.entity_description.key in self.coordinator.data.measurement
         )
-        if self.entity_description.value:
-            return self.entity_description.value(raw_attr)
-        return raw_attr
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the native sensor value."""
+        return self.coordinator.data.measurement.get(self.entity_description.key)
