@@ -139,7 +139,7 @@ class IammeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="cannot_connect")
 
         self._discovered_serial = friendly_name.rsplit("_", 1)[-1]
-        await self.async_set_unique_id(self._discovered_serial, raise_on_progress=False)
+        await self.async_set_unique_id(self._discovered_serial)
         self._abort_if_unique_id_configured(updates={CONF_IP_ADDRESS: host})
 
         self._discovered = {
