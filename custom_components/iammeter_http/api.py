@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from base64 import b64encode
 
 import aiohttp
@@ -70,7 +69,7 @@ class IammeterApi:
                     raise
                 payload = await self._async_get_payload(True)
                 self._legacy_auth_required = True
-        except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as err:
+        except (TimeoutError, aiohttp.ClientError, ValueError) as err:
             raise IammeterApiError(f"Unable to read {self.monitor_url}: {err}") from err
 
         try:
